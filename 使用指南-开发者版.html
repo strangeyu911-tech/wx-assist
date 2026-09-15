@@ -255,10 +255,10 @@ npm run build</code></pre>
     <p>改完代码想打包成免安装的 EXE 分发？仓库提供两个 PyInstaller spec：</p>
     <pre><code>pip install pyinstaller
 
-:: 完整版（含 RAG，产物 dist/wx-assist.exe，约 250 MB）
+:: 完整版（含 RAG，产物 dist/wx-assist.exe，约 190 MB）
 pyinstaller build_rag.spec --noconfirm
 
-:: 精简版（不含 RAG，产物 dist/wx-assist_no_rag.exe，约 90 MB）
+:: 精简版（不含 RAG，产物 dist/wx-assist_no_rag.exe，约 76 MB）
 pyinstaller build.spec --noconfirm</code></pre>
     <table>
       <tr><th>要点</th><th>说明</th></tr>
@@ -266,7 +266,7 @@ pyinstaller build.spec --noconfirm</code></pre>
       <tr><td>frozen 路径</td><td><code>desktop.py</code> 检测 <code>sys.frozen</code> 后把项目根切到 EXE 所在目录，因此运行数据生成在 EXE 旁边，而不是临时目录</td></tr>
       <tr><td>hiddenimports</td><td>两个 spec 都维护了一份较长的动态导入清单——函数内 import 的模块（如 <code>src.wechat.content_codec</code>）、chromadb 的 Rust 绑定、飞书 SDK（<code>lark_oapi</code>）等静态分析检测不到，必须显式声明。新增动态导入的模块时记得同步补进去</td></tr>
       <tr><td>excludes</td><td>精简版额外排除 <code>numpy</code> / <code>chromadb</code> / <code>fastembed</code> / <code>onnxruntime</code> 等重依赖来压体积</td></tr>
-      <tr><td>lib 一致性</td><td>两个 spec 的 lib/ 打包声明逐行一致；完整版多出的约 165 MB 全是 <code>models/</code> 嵌入模型</td></tr>
+      <tr><td>lib 一致性</td><td>两个 spec 的 lib/ 打包声明逐行一致；完整版多出的约 110 MB 全是 <code>models/</code> 嵌入模型</td></tr>
       <tr><td>前端依赖</td><td>打包前确保 <code>ui/dist</code> 已按最新代码构建（spec 以 datas 形式整体打入）</td></tr>
     </table>
 
