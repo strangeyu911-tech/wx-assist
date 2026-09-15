@@ -269,6 +269,7 @@
       <a href="#files" data-page-node-id="eUEqQ6mbpnqhNHNQM9cXs8">配置文件与数据文件</a>
       <a href="#ports" data-page-node-id="U5NdGFGb6gPZTRQebT3eDI">端口清单</a>
       <a href="#trouble" data-page-node-id="ydVhfumftBcc36INk2cvCm">故障排查 FAQ</a>
+      <a href="#safety" data-page-node-id="nav-safety-x1">个人自用避坑指南</a>
       <a href="#legal" data-page-node-id="XxAyFx4ghZ6vbwEyN5hIzi">合规与免责</a>
     </nav>
   </aside>
@@ -1865,6 +1866,49 @@ args:
         </tr>
       </tbody>
     </table>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <h2 id="safety" data-page-node-id="sec-safety-h2">个人自用避坑指南</h2>
+
+    <p data-page-node-id="sec-safety-p1">这一章是<strong data-page-node-id="sec-safety-s1">本指南最重要的安全结论</strong>，先说立场：微信官方在 2024-2026 年连续发布打击"外挂"的公告，本项目用的三类技术手段在官方眼里完全是三种东西。<strong data-page-node-id="sec-safety-s2">个人自用的最优解只有一句话——能走 iLink 的全部走 iLink，真实账号一行自动发送都不要有。</strong></p>
+
+    <div class="tip box" data-page-node-id="sec-safety-tip1">
+      <span class="ttl" data-page-node-id="sec-safety-t1">核心原则：机器人投递优先（官方正门）</span>
+      <p data-page-node-id="sec-safety-p2">绑定微信推送渠道用的 iLink Bot API 是腾讯 2026 年正式开放的官方通道（产品名 ClawBot，<code data-page-node-id="sec-safety-c1">ilinkai.weixin.qq.com</code>），有正式使用条款背书，<strong data-page-node-id="sec-safety-s3">零封号风险</strong>。摘要、提醒、公众号速读、Agent 回复——所有成果都应该<strong data-page-node-id="sec-safety-s4">投递到这个机器人对话里</strong>，而不是用你的真实微信账号发到群里。</p>
+      <p data-page-node-id="sec-safety-p3">具体落点：</p>
+      <ul data-page-node-id="sec-safety-ul1">
+        <li data-page-node-id="sec-safety-li1">「群聊 AI 摘要」生成后 → 投递渠道选<strong data-page-node-id="sec-safety-s5">微信 Bot 私聊</strong>，不要选"发送回群"；</li>
+        <li data-page-node-id="sec-safety-li2">「关键词提醒」命中后 → 推送到微信 Bot，你看到提醒后<strong data-page-node-id="sec-safety-s6">自己手动去群里回</strong>；</li>
+        <li data-page-node-id="sec-safety-li3">「公众号实时提醒」→ 同样走 Bot 私聊；</li>
+        <li data-page-node-id="sec-safety-li4">「Agent 智能助手」→ 对话一律发生在 Bot 通道内。</li>
+      </ul>
+    </div>
+
+    <div class="danger box" data-page-node-id="sec-safety-d1">
+      <span class="ttl" data-page-node-id="sec-safety-t2">红色区域：真实账号自动发送，建议永远关闭</span>
+      <p data-page-node-id="sec-safety-p4">所有"用你的真实微信账号自动发消息到群聊/私聊"的功能（模拟按键操控微信窗口的那条链路），在微信安全中心 2026 年 1 月公告里被<strong data-page-node-id="sec-safety-s7">点名归类为"外挂类"：利用模拟按键、自动化脚本等手段操控微信</strong>。处罚是阶梯式的：警告 → 限制功能 → <strong data-page-node-id="sec-safety-s8">封禁账号</strong>，且账号绑定的微信支付、聊天记录、好友关系都在这条船上。</p>
+      <p data-page-node-id="sec-safety-p5">结论：<strong data-page-node-id="sec-safety-s9">要发的内容你自己手动发</strong>。工具负责"让你知道该发什么"，不负责"替你发"。多花的那 10 秒钟，买的是主号的安全。</p>
+    </div>
+
+    <div class="warn box" data-page-node-id="sec-safety-w1">
+      <span class="ttl" data-page-node-id="sec-safety-t3">其他避坑清单</span>
+      <ul data-page-node-id="sec-safety-ul2">
+        <li data-page-node-id="sec-safety-li5"><strong data-page-node-id="sec-safety-s10">主号隔离</strong>：如果一定要尝试高风险功能（不建议），用注册时间久、有实名的小号，主号（聊天 + 支付那个）永远别参与 Hook 和自动化；</li>
+        <li data-page-node-id="sec-safety-li6"><strong data-page-node-id="sec-safety-s11">只自用，不传播</strong>：《微信个人账号使用规范》1.2.5 明确"将用于上述用途的软件运营或向公众传播"是独立加重条款——公开判例里获刑的几乎都是开发/销售方；</li>
+        <li data-page-node-id="sec-safety-li7"><strong data-page-node-id="sec-safety-s12">拒绝一切"增强插件"</strong>：抢红包、批量加好友、虚拟定位、营销群发——哪怕别的项目提供，碰都别碰，这些是封号重灾区+刑事案件高发区；</li>
+        <li data-page-node-id="sec-safety-li8"><strong data-page-node-id="sec-safety-s13">控制节奏</strong>：定时任务别整点批量触发，推送频率保持"像个正常人在看"的水平；</li>
+        <li data-page-node-id="sec-safety-li9"><strong data-page-node-id="sec-safety-s14">数据合规</strong>：导出的聊天记录、朋友圈档案包含他人个人信息，别上传到第三方服务或发给无关的人；</li>
+        <li data-page-node-id="sec-safety-li10"><strong data-page-node-id="sec-safety-s15">企业场景直接换官方 API</strong>：企业微信群机器人 Webhook / 自建应用 / 微信客服，能力完全覆盖推送需求且零风险。"企业内部用"在平台规则面前没有豁免。</li>
+      </ul>
+    </div>
+
+    <div class="info box" data-page-node-id="sec-safety-i1">
+      <span class="ttl" data-page-node-id="sec-safety-t4">风险分级速查</span>
+      <p data-page-node-id="sec-safety-p6">🟢 <strong data-page-node-id="sec-safety-s16">低风险</strong>：iLink Bot 推送（本指南「绑定微信推送渠道」章）、本地 AI 摘要计算、收藏/朋友圈整理浏览。<br>
+      🟡 <strong data-page-node-id="sec-safety-s17">中风险</strong>：Hook 提取密钥 + 解密直读本地数据库（纯本地只读，对端不可见，但属官方定义的违规获取行为）。<br>
+      🔴 <strong data-page-node-id="sec-safety-s18">高风险</strong>：模拟按键操控真实账号收发消息（定时群发、自动回复、写群）。</p>
+      <p data-page-node-id="sec-safety-p7">完整依据（官方规则原文、真实判例、企业合规替代方案）见仓库根目录的 <strong data-page-node-id="sec-safety-s19">风险告知.html</strong>。</p>
     </div>
 
     <!-- ══════════════════════════════════════ -->
