@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>摘星 · 微信助手 — 开发者版指南（从源码运行）</title>
+<link rel="icon" href="favicon.ico">
+<style>
+  :root{
+    --green:#07C160;--green-dark:#06AD56;--green-soft:#E8F8EF;
+    --ink:#1B1F23;--ink-2:#3D444D;--ink-3:#6A737D;
+    --line:#E4E7EC;--line-2:#F0F2F5;--bg:#FFFFFF;--bg-2:#FAFBFC;--code-bg:#F6F8FA;
+    --amber:#B26A00;--amber-bg:#FFF8E5;--amber-line:#FFE08A;
+    --red:#C0392B;--red-bg:#FDF0EE;--red-line:#F5C6C0;
+    --blue:#1A6FB5;--blue-bg:#EEF6FD;--blue-line:#BCDAF3;
+    --violet:#6B4EA8;--violet-bg:#F4F0FC;--violet-line:#DCD0F5;
+    --sidebar-w:280px;--radius:10px;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,"Microsoft YaHei Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;}
+  .wrap{display:flex;align-items:flex-start;max-width:1400px;margin:0 auto;}
+  .sidebar{position:sticky;top:0;flex:0 0 var(--sidebar-w);width:var(--sidebar-w);height:100vh;overflow-y:auto;border-right:1px solid var(--line);background:var(--bg-2);padding:22px 0 60px;}
+  .sidebar::-webkit-scrollbar{width:8px;}
+  .sidebar::-webkit-scrollbar-thumb{background:#D6DAE0;border-radius:4px;}
+  .brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+  .brand h1{font-size:16px;margin:0 0 4px;letter-spacing:.2px;}
+  .brand .sub{font-size:12px;color:var(--ink-3);font-family:var(--mono);}
+  .brand .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:7px;vertical-align:middle;}
+  nav a{display:block;padding:6px 20px 6px 22px;color:var(--ink-2);text-decoration:none;font-size:13.5px;border-left:2px solid transparent;transition:.15s;}
+  nav a:hover{background:#EFF1F4;color:var(--green-dark);}
+  nav a.active{color:var(--green-dark);font-weight:600;border-left-color:var(--green);background:#E9F8F0;}
+  nav .grp{padding:14px 20px 5px;font-size:11px;font-weight:700;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase;}
+  .main{flex:1 1 auto;min-width:0;padding:44px 56px 120px;}
+  h2{font-size:25px;margin:56px 0 18px;padding-bottom:10px;border-bottom:2px solid var(--line);letter-spacing:-.2px;}
+  h2:first-of-type{margin-top:0;}
+  h3{font-size:18px;margin:34px 0 12px;color:var(--ink);}
+  h4{font-size:15px;margin:22px 0 10px;color:var(--ink-2);}
+  p{margin:12px 0;}
+  ul,ol{margin:12px 0;padding-left:24px;}
+  li{margin:6px 0;}
+  a{color:var(--green-dark);}
+  strong{font-weight:650;}
+  hr{border:0;border-top:1px solid var(--line);margin:40px 0;}
+  code{font-family:var(--mono);font-size:.875em;background:var(--code-bg);border:1px solid var(--line-2);padding:1.5px 5px;border-radius:4px;color:#B3306B;word-break:break-word;}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:16px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:#24292F;}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:13px;}
+  .hero{background:linear-gradient(135deg,#F0FBF5 0%,#F7F9FB 70%);border:1px solid var(--line);border-radius:14px;padding:30px 34px;margin-bottom:32px;}
+  .hero h1{font-size:30px;margin:0 0 8px;letter-spacing:-.5px;}
+  .hero .tagline{font-size:15px;color:var(--ink-2);margin:0 0 18px;}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;}
+  .meta span{font-size:12px;font-family:var(--mono);background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:20px;color:var(--ink-2);}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top;}
+  th{background:var(--bg-2);font-weight:650;color:var(--ink-2);white-space:nowrap;}
+  tr:nth-child(even) td{background:#FCFDFE;}
+  td code{font-size:12.5px;}
+  .box{border-radius:var(--radius);padding:14px 18px;margin:18px 0;border:1px solid;font-size:14px;}
+  .box p{margin:6px 0;}
+  .box p:first-child{margin-top:0;}
+  .box p:last-child{margin-bottom:0;}
+  .box .ttl{font-weight:700;display:block;margin-bottom:4px;font-size:13.5px;letter-spacing:.2px;}
+  .danger{background:var(--red-bg);border-color:var(--red-line);color:#7A241A;}
+  .danger .ttl{color:var(--red);}
+  .warn{background:var(--amber-bg);border-color:var(--amber-line);color:#6B4A00;}
+  .warn .ttl{color:var(--amber);}
+  .tip{background:var(--green-soft);border-color:#B7E7CC;color:#0C5132;}
+  .tip .ttl{color:var(--green-dark);}
+  .info{background:var(--blue-bg);border-color:var(--blue-line);color:#12456F;}
+  .info .ttl{color:var(--blue);}
+  .violet{background:var(--violet-bg);border-color:var(--violet-line);color:#3F2C6B;}
+  .violet .ttl{color:var(--violet);}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:20px 0;}
+  .steps>li{counter-increment:s;position:relative;padding:0 0 4px 42px;margin:0 0 22px;}
+  .steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono);}
+  .steps>li::after{content:"";position:absolute;left:13px;top:30px;bottom:-18px;width:1px;background:var(--line);}
+  .steps>li:last-child::after{display:none;}
+  .steps>li>.st{font-weight:650;display:block;margin-bottom:2px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:20px 0;}
+  .card{border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;background:#fff;transition:.15s;}
+  .card:hover{border-color:var(--green);box-shadow:0 3px 12px rgba(7,193,96,.09);}
+  .card .ct{font-weight:650;font-size:14.5px;margin-bottom:5px;color:var(--ink);}
+  .card .cd{font-size:13px;color:var(--ink-3);line-height:1.6;}
+  .nav-toggle{display:none;}
+  @media (max-width:980px){
+    .sidebar{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:transform .22s ease;box-shadow:0 0 30px rgba(0,0,0,.12);}
+    .sidebar.open{transform:translateX(0);}
+    .main{padding:70px 20px 90px;}
+    .nav-toggle{display:block;position:fixed;top:12px;left:12px;z-index:60;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+    h2{font-size:21px;}
+    .hero{padding:22px 20px;}
+    .hero h1{font-size:23px;}
+  }
+  @media print{
+    .sidebar,.nav-toggle{display:none;}
+    .main{padding:0;}
+    pre,.box,.card{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<button class="nav-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰ 目录</button>
+
+<div class="wrap">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1><span class="dot"></span>摘星 · 微信助手</h1>
+      <div class="sub">开发者版指南 · Route B</div>
+    </div>
+    <nav id="toc">
+      <div class="grp">开始</div>
+      <a href="#routes">两条路线</a>
+      <a href="#clone">获取源码</a>
+      <a href="#missing">clone 之后缺什么</a>
+      <div class="grp">环境搭建</div>
+      <a href="#venv">Python 环境与依赖</a>
+      <a href="#lib">安装 lib 附件（必做一次）</a>
+      <a href="#models">RAG 模型（可选）</a>
+      <a href="#frontend">前端构建</a>
+      <a href="#run">运行</a>
+      <div class="grp">打包</div>
+      <a href="#build">构建 EXE</a>
+      <div class="grp">参考</div>
+      <a href="#arch">架构速览</a>
+      <a href="#troubleshoot">日志与排错</a>
+      <div class="grp">更多</div>
+      <a href="风险告知.html">⚠️ 风险告知</a>
+      <a href="使用指南-用户版.html">用户版指南</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="hero">
+      <h1>开发者版指南</h1>
+      <p class="tagline">路线 B：从源码运行和构建。适合想阅读代码、修改行为、参与开发的你。只想用起来 → 请看<a href="使用指南-用户版.html">用户版指南（EXE 路线）</a>。</p>
+      <div class="meta">
+        <span>Windows 10 / 11</span>
+        <span>Python 3.11+（3.13 实测）</span>
+        <span>Node.js ≥ 18</span>
+        <span>Git</span>
+      </div>
+    </div>
+
+    <h2 id="routes">两条路线</h2>
+    <table>
+      <tr><th></th><th>路线 A：EXE</th><th>路线 B：源码（本指南）</th></tr>
+      <tr><td>适合</td><td>只想使用功能</td><td>读代码 / 改功能 / 二次开发 / 不信任预编译二进制</td></tr>
+      <tr><td>上手成本</td><td>下载一个文件</td><td>约 15–30 分钟环境搭建</td></tr>
+      <tr><td>改代码生效</td><td>✗</td><td>✓ 改完重启即可，前端支持热更新开发</td></tr>
+      <tr><td>运行数据</td><td>EXE 同目录 <code>data\</code></td><td>项目根目录 <code>data/</code></td></tr>
+      <tr><td>能否共存</td><td colspan="2">可以安装，但<strong>不要同时运行</strong>——会抢 17327 端口、iLink 会话和同一个 data 目录</td></tr>
+    </table>
+
+    <h2 id="clone">获取源码</h2>
+    <pre><code>git clone https://github.com/strangeyu911-tech/wx-assist.git
+cd wx-assist
+git checkout master</code></pre>
+    <p>主分支是 <code>master</code>。本仓库是上游项目的 fork，持续跟进上游并附带自己的改进。</p>
+
+    <h2 id="missing">clone 之后缺什么</h2>
+    <p><strong>直接 clone 下来是跑不起来的</strong>——这是刻意的设计，不是缺陷。以下内容被排除在 git 之外，需要手动补齐：</p>
+    <table>
+      <tr><th style="width:18%">缺失内容</th><th>是什么</th><th>缺了会怎样</th><th>如何补齐</th></tr>
+      <tr>
+        <td><code>lib/</code></td>
+        <td>微信数据库解密组件：6 个 DLL + <code>lib/wasm/</code>（25 个 WASM 文件）。闭源二进制，有合规风险，按惯例不入 git</td>
+        <td><span class="badge b-no">致命</span> 无法解密 / 读写微信数据库，读不到任何消息</td>
+        <td>从 Release 下载 <code>wx-assist-lib.zip</code> 解压到项目根（见下节）</td>
+      </tr>
+      <tr>
+        <td><code>models/</code></td>
+        <td>RAG 语义检索的嵌入模型 <code>fast-bge-small-zh-v1.5</code>（ONNX，约 91 MB）</td>
+        <td><span class="badge b-mid">降级</span> 语义检索不可用，其余功能正常</td>
+        <td>可选，见 <a href="#models">RAG 模型</a> 一节</td>
+      </tr>
+      <tr>
+        <td><code>data/</code></td>
+        <td>所有运行时数据（配置、SQLite、缓存、导出）</td>
+        <td><span class="badge b-ok">正常</span> 空目录是预期状态，首次运行自动生成</td>
+        <td>不用管</td>
+      </tr>
+      <tr>
+        <td><code>.env</code></td>
+        <td>本地环境变量（API Key 等）</td>
+        <td><span class="badge b-gray">可选</span> 也可以在界面里配置</td>
+        <td>复制 <code>.env.example</code> 为 <code>.env</code> 按需填写</td>
+      </tr>
+    </table>
+    <div class="box info">
+      <span class="ttl">为什么二进制不放进 git？</span>
+      <p>两个原因：<strong>工程上</strong>，git 会永久保存每个历史版本的二进制，仓库体积不可逆膨胀；Release 附件可随时替换、撤下。<strong>风险上</strong>，把「原创代码」和「来源不清的敏感二进制」物理分开：代码保持公开可审计，二进制只通过 Release 附件按需分发，不随 clone 扩散。</p>
+    </div>
+
+    <h2 id="venv">Python 环境与依赖</h2>
+    <pre><code>python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt</code></pre>
+    <p>实测通过的版本组合：Python 3.13 + 仓库锁定版本的依赖。<code>requirements.txt</code> 已包含全部后端依赖（含 QQ / 飞书绑定所需的 <code>cryptography</code>、微信解密所需的 <code>pycryptodome</code>、RAG 所需的 <code>chromadb</code> / <code>fastembed</code> 等）。</p>
+
+    <h2 id="lib">安装 lib 附件（必做一次）</h2>
+    <div class="box warn">
+      <span class="ttl">这一步就是「安装完以后额外安装一次附件」</span>
+      <p>源码环境装好之后，还需要<strong>额外下载一次 <code>lib</code> 附件</strong>并解压到位——因为解密组件不在 git 仓库里。这一步只需做一次；组件版本不变的话，以后拉新代码也不用重做。</p>
+    </div>
+    <ol class="steps">
+      <li><span class="st">下载附件</span>到 <a href="https://github.com/strangeyu911-tech/wx-assist/releases" target="_blank" rel="noopener">Releases</a> 页面，下载最新版本 Assets 里的 <code>wx-assist-lib.zip</code>。</li>
+      <li><span class="st">解压到项目根目录</span>解压后应得到这样的结构（与 <code>src/</code> 平级）：</li>
+    </ol>
+    <pre><code>wx-assist/
+├── lib/
+│   ├── wcdb_api.dll        # WCDB 接口层
+│   ├── WCDB.dll            # 微信数据库引擎
+│   ├── wx_key.dll          # 数据库密钥提取
+│   ├── MSVCP140.dll / VCRUNTIME140.dll / VCRUNTIME140_1.dll   # MSVC 运行时
+│   └── wasm/               # 图片解密 WASM 服务（25 个文件）
+├── src/
+├── ui/
+└── desktop.py</code></pre>
+    <div class="box info">
+      <span class="ttl">附件从哪来？（备选方案）</span>
+      <p>lib 附件的原始来源是官方发布过的精简版 EXE（<code>wx-assist_no_rag.exe</code>）：两个 build spec 对 lib 的打包声明逐行一致，PyInstaller onefile 运行时会把 lib 解压到 <code>%TEMP%\_MEIxxxxxx\</code>。用 <a href="https://github.com/extremecoders-re/pyinstxtractor" target="_blank" rel="noopener">pyinstxtractor</a> 解开归档即可取出 lib/——<strong>静态解包即可，无需运行来路不明的 EXE</strong>。正常情况下直接用 Release 里的 lib 附件就行，不必走这条备选路。</p>
+    </div>
+
+    <h2 id="models">RAG 模型（可选）</h2>
+    <p>想要 AI 对话的语义检索能力，需要补上嵌入模型（约 91 MB）。两种方式任选：</p>
+    <ul>
+      <li><strong>Release 附件</strong>：下载 <code>models-bge-small-zh-v1.5.tar.gz</code>，解压到项目根的 <code>models/</code> 目录。</li>
+      <li><strong>官方源</strong>：从 Qdrant 官方 GCS 源获取 <code>fast-bge-small-zh-v1.5.tar.gz</code>（54.5 MB），解压为 <code>models/fast-bge-small-zh-v1.5/</code>。</li>
+    </ul>
+    <div class="box warn">
+      <span class="ttl">别让 fastembed 自己联网拉模型</span>
+      <p>实测首次自动下载可能耗时 13 分钟，还会在用户目录另存一份 91 MB 的 HF 缓存副本。代码已优先使用本地 <code>models/</code> 目录——只要目录在，就不会联网。不装模型也只是语义检索降级为不可用，程序照常运行。</p>
+    </div>
+
+    <h2 id="frontend">前端构建</h2>
+    <p>界面是 React + Vite 项目，位于 <code>ui/</code>。仓库不跟踪构建产物，源码路线需要自己构建一次：</p>
+    <pre><code>cd ui
+npm install
+npm run build</code></pre>
+    <p>构建产物输出到 <code>ui/dist/</code>，后端会直接伺服该目录（访问 <code>http://127.0.0.1:17327</code>）。改前端代码后重新 <code>npm run build</code> 刷新页面即可生效；开发时也可以 <code>npm run dev</code> 起 Vite 热更新服务。</p>
+
+    <h2 id="run">运行</h2>
+    <pre><code>.venv\Scripts\python.exe desktop.py</code></pre>
+    <p>启动后：Web 服务监听 <code>127.0.0.1:17327</code>，自动打开桌面窗口（pywebview / Edge WebView2；WebView2 不可用时自动退回浏览器）。首次使用前记得确认微信电脑版已登录，然后到界面里完成推送平台绑定与 AI 配置（流程见<a href="使用指南-用户版.html">用户版指南</a>）。</p>
+    <div class="box info">
+      <span class="ttl">关键约定</span>
+      <p>• 端口 <code>17327</code> 硬编码在 <code>src/web/server.py</code> 的 <code>start_web_server()</code>。<br>
+      • <strong>不要同时运行源码版和 EXE 版</strong>：端口、iLink 会话、data 目录都会冲突。<br>
+      • 桌面窗口内 <code>F5</code> / <code>Ctrl+R</code> 可刷新（WebView2 默认不支持，程序已注入快捷键）。</p>
+    </div>
+
+    <h2 id="build">构建 EXE</h2>
+    <p>改完代码想打包成免安装的 EXE 分发？仓库提供两个 PyInstaller spec：</p>
+    <pre><code>pip install pyinstaller
+
+:: 完整版（含 RAG，产物 dist/wx-assist.exe，约 250 MB）
+pyinstaller build_rag.spec --noconfirm
+
+:: 精简版（不含 RAG，产物 dist/wx-assist_no_rag.exe，约 90 MB）
+pyinstaller build.spec --noconfirm</code></pre>
+    <table>
+      <tr><th>要点</th><th>说明</th></tr>
+      <tr><td>打包模式</td><td>onefile：<code>EXE()</code> 直接接收 binaries/datas，<strong>没有 COLLECT 步骤</strong>。运行时自解压到 <code>%TEMP%\_MEIxxxxxx\</code>，退出时清理</td></tr>
+      <tr><td>frozen 路径</td><td><code>desktop.py</code> 检测 <code>sys.frozen</code> 后把项目根切到 EXE 所在目录，因此运行数据生成在 EXE 旁边，而不是临时目录</td></tr>
+      <tr><td>hiddenimports</td><td>两个 spec 都维护了一份较长的动态导入清单——函数内 import 的模块（如 <code>src.wechat.content_codec</code>）、chromadb 的 Rust 绑定、飞书 SDK（<code>lark_oapi</code>）等静态分析检测不到，必须显式声明。新增动态导入的模块时记得同步补进去</td></tr>
+      <tr><td>excludes</td><td>精简版额外排除 <code>numpy</code> / <code>chromadb</code> / <code>fastembed</code> / <code>onnxruntime</code> 等重依赖来压体积</td></tr>
+      <tr><td>lib 一致性</td><td>两个 spec 的 lib/ 打包声明逐行一致；完整版多出的约 165 MB 全是 <code>models/</code> 嵌入模型</td></tr>
+      <tr><td>前端依赖</td><td>打包前确保 <code>ui/dist</code> 已按最新代码构建（spec 以 datas 形式整体打入）</td></tr>
+    </table>
+
+    <h2 id="arch">架构速览</h2>
+    <pre><code>src/
+├── bot.py               # 主循环：收发消息、事件分发
+├── config.py            # load_config()：.env + 界面配置合并
+├── web/                 # HTTP 服务（server.py 端口 17327）+ REST API + AI 对话
+├── wechat/              # 微信数据层：WCDB 解密客户端、密钥提取、
+│                        #   图片/语音/缓存解密、iLink 官方 Bot 收发
+├── im/                  # 多平台推送框架：registry + 各平台插件
+│   └── plugins/         #   wechat(iLink) / qqbot / feishu，各自含 onboarding 扫码绑定
+├── assistant/           # 群摘要、关键词提醒、公众号监控、任务中心
+│   └── rag/             #   语义检索：embedder + vector_store(ChromaDB) + reranker
+├── agent/               # ReAct 引擎 + 工具注册表 + MCP Server
+├── summarize/           # AI 后端抽象：deepseek / claude / stub，Prompt 管理
+├── scheduler/           # Cron 定时调度
+├── skill/               # 自定义 SKILL 扩展
+├── mcp/                 # MCP 客户端与工具管理
+├── db/                  # SQLite 存储 + 内容缓存
+├── memory/              # 对话记忆整合
+└── guard/               # 内容安全过滤</code></pre>
+    <p>更完整的架构图见仓库 <code>README.md</code> 的「模块架构」一节；公开技术说明见 <code>doc/</code> 目录。</p>
+
+    <h2 id="troubleshoot">日志与排错</h2>
+    <table>
+      <tr><th>线索</th><th>位置</th><th>典型用途</th></tr>
+      <tr><td><code>data/bot.log</code></td><td>项目根 data 目录</td><td>主要运行日志：绑定流程、推送投递、AI 调用、定时任务都在这里。排查一切「没反应」问题先看它</td></tr>
+      <tr><td><code>data/crash.log</code></td><td>同上</td><td>windowed 模式下的崩溃记录（EXE 闪退时看这里）</td></tr>
+      <tr><td><code>AI 设置 → 测试连接</code></td><td>界面</td><td>一键验证 AI 后端链路；「运行状态」页的 AI 状态在测试成功或首次成功调用后翻绿</td></tr>
+      <tr><td>端口冲突</td><td><code>netstat -ano | findstr 17327</code></td><td>确认是否有残留进程占用；找到 PID 后 taskkill 结束</td></tr>
+      <tr><td>WebView2 问题</td><td>日志中出现 fallback 记录</td><td>安装 Microsoft Edge WebView2 Runtime，或直接用浏览器访问 127.0.0.1:17327</td></tr>
+    </table>
+    <div class="box tip">
+      <span class="ttl">改动验证小抄</span>
+      <p>改了后端代码 → 重启 <code>desktop.py</code>；改了前端 → <code>npm run build</code> 后刷新页面（不用重启后端）；改了绑定 / 推送逻辑 → 到「系统配置 → 推送平台」重新生成二维码实测，QQ 授权任务约 5 分钟过期属正常。</p>
+    </div>
+
+    <hr>
+    <p style="color:var(--ink-3);font-size:13px">摘星 · 微信助手 — 开发者版指南 · 仅供学习与本地开发使用，请遵守当地法律法规及微信用户协议，阅读 <a href="风险告知.html">风险告知</a> 后自行评估。</p>
+  </main>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var heads = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var y = window.scrollY + 120, idx = 0;
+    for (var i = 0; i < heads.length; i++){ if (heads[i] && heads[i].offsetTop <= y) idx = i; }
+    links.forEach(function(a, i){ a.classList.toggle('active', i === idx); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+document.querySelectorAll('#toc a').forEach(function(a){
+  a.addEventListener('click', function(){
+    if (window.innerWidth <= 980) document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+</script>
+
+</body>
+</html>
