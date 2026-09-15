@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Gear, ChartLine, Scroll, Spinner, Sun, Moon, ChatCircleDots, Star, Eye, Newspaper, Chats, PaperPlaneTilt, Bell, QrCode, X, PuzzlePiece, Clock } from '@phosphor-icons/react'
+import { Gear, ChartLine, Scroll, Spinner, Sun, Moon, ChatCircleDots, Star, Eye, Newspaper, Chats, PaperPlaneTilt, Bell, QrCode, X, PuzzlePiece, Clock, ArrowClockwise } from '@phosphor-icons/react'
 import { API_BASE, getWsUrl } from './components/SharedComponents'
 import Dashboard from './components/Dashboard'
 import ConfigPanel from './components/ConfigPanel'
@@ -60,6 +60,15 @@ export default function App() {
   const [wsConnected, setWsConnected] = useState(false)
   const [showTaskCenter, setShowTaskCenter] = useState(false)
   const [showLAN, setShowLAN] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Full page reload — the reliable way to pick up a rebuilt frontend
+  // (WebView2 desktop window has no browser-style refresh chrome)
+  const handleRefresh = () => {
+    if (refreshing) return
+    setRefreshing(true)
+    setTimeout(() => location.reload(), 300)
+  }
   const [runningTaskCount, setRunningTaskCount] = useState(0)
   const [failedTaskCount, setFailedTaskCount] = useState(0)
   // lastReadTime: 上次打开任务中心的时间，用于计算"未读失败任务"数
@@ -396,6 +405,15 @@ export default function App() {
                 {TABS.find(t => t.id === activeTab)?.label}
               </h2>
               <div className="flex items-center gap-3">
+                {/* Page refresh — picks up rebuilt frontend without restarting the app */}
+                <button
+                  onClick={handleRefresh}
+                  className="p-2 rounded-full bg-bg-main border border-border-main text-text-muted hover:text-text-main hover:border-text-muted/30 transition-colors cursor-pointer"
+                  title="刷新页面 (F5)"
+                >
+                  <ArrowClockwise size={18} className={refreshing ? 'animate-spin' : ''} />
+                </button>
+
                 {/* Task Center bell icon with numeric badge */}
                 <button
                   onClick={() => setShowTaskCenter(true)}
