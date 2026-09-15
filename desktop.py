@@ -274,6 +274,25 @@ def main():
             height=800,
             min_size=(900, 600),
         )
+
+        # WebView2 windows have no built-in reload shortcut. Inject a
+        # keydown handler on every page load so F5 / Ctrl+R reload the UI
+        # (needed to pick up a rebuilt frontend without restarting the app).
+        _REFRESH_JS = (
+            "document.addEventListener('keydown', function (e) {"
+            "  if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {"
+            "    e.preventDefault(); location.reload();"
+            "  }"
+            "});"
+        )
+
+        def _bind_refresh():
+            try:
+                window.evaluate_js(_REFRESH_JS)
+            except Exception:
+                pass
+
+        window.events.loaded += _bind_refresh
         webview.start(gui="edgechromium")
     except Exception as e:
         logger_available = False
