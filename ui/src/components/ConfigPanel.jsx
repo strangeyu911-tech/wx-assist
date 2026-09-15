@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, Warning, FloppyDisk, Info, CircleNotch, MagnifyingGlass, Lightning, PaperPlaneTilt, QrCode, SignOut, TestTube, ChatCircle, Trash, CaretDown, CaretRight, X, Brain } from '@phosphor-icons/react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -31,11 +31,188 @@ function TypewriterText({ text, speed = 15 }) {
   return <span>{displayedText}</span>
 }
 
+// ── WorkBuddy App Service settings (in-process ACP provider, no API key) ──
+function WorkBuddySection({ form, update }) {
+  const [status, setStatus] = useState(null)        // /api/workbuddy/status response
+  const [loading, setLoading] = useState(true)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState(null) // /api/workbuddy/test response
+  const [restarting, setRestarting] = useState(false)
+
+  async function loadStatus(silent = false) {
+    if (!silent) setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/workbuddy/status`)
+      const data = await res.json()
+      setStatus(data)
+    } catch {
+      setStatus(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadStatus() }, [])
+
+  async function handleTest() {
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/workbuddy/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: form.ai_provider_model || 'auto' }),
+      })
+      const data = await res.json()
+      setTestResult(data)
+      loadStatus(true)
+    } catch (err) {
+      setTestResult({ ok: false, error: err.message || '网络请求失败' })
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  async function handleRestart() {
+    setRestarting(true)
+    try {
+      await fetch(`${API_BASE}/api/workbuddy/restart`, { method: 'POST' })
+    } catch {}
+    loadStatus(true)
+    setRestarting(false)
+  }
+
+  async function handleRescan() {
+    setLoading(true)
+    try {
+      await fetch(`${API_BASE}/api/workbuddy/rescan`, { method: 'POST' })
+    } catch {}
+    loadStatus(true)
+  }
+
+  const supported = status?.supported
+  const models = status?.supported_models || []
+  const gateway = status?.gateway
+  const selectedModel = form.ai_provider_model || 'auto'
+
+  return (
+    <div>
+      {/* Discovery status */}
+      <div className={`mb-4 px-4 py-3 rounded-xl border text-sm ${
+        loading ? 'bg-bg-raised border-border-main text-text-muted'
+        : supported ? 'bg-brand-green-light border border-brand-green/20 text-brand-green-hover'
+        : 'bg-status-error-soft border border-status-error/20 text-status-error'}`}>
+        {loading ? (
+          <span className="flex items-center gap-2"><CircleNotch size={16} className="animate-spin" />正在检测本机 WorkBuddy 安装…</span>
+        ) : supported ? (
+          <span className="flex items-center gap-2">
+            <CheckCircle size={16} weight="fill" />
+            已检测到 WorkBuddy，将复用本机登录额度，无需 API Key
+          </span>
+        ) : (
+          <span className="flex items-start gap-2">
+            <Warning size={16} className="mt-0.5 shrink-0" />
+            <span>未找到 WorkBuddy。请先安装并登录 WorkBuddy 桌面端，然后点击下方「重新扫描」。</span>
+          </span>
+        )}
+      </div>
+
+      {/* Model selection via chips */}
+      <Field label="模型" hint="点击选择模型，auto 由 WorkBuddy 自动分配">
+        <div className="flex flex-wrap gap-1.5">
+          {models.map(m => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => update('ai_provider_model', m === selectedModel ? '' : m)}
+              className={`px-2.5 py-1 rounded-full text-[12px] font-mono cursor-pointer transition-colors border ${
+                selectedModel === m
+                  ? 'bg-brand-green-light text-brand-green border-brand-green/20 font-semibold'
+                  : 'bg-bg-raised text-text-muted border-border-main hover:border-text-muted/30'
+              }`}
+            >{m}</button>
+          ))}
+        </div>
+      </Field>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-3 mb-4">
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.02 }}
+          onClick={handleTest}
+          disabled={testing || !supported}
+          className={`flex-1 py-2.5 rounded-full text-[14px] font-semibold tracking-wide shadow-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer
+            ${testing || !supported
+              ? 'bg-bg-raised border border-border-main text-text-muted cursor-not-allowed'
+              : 'bg-brand-green-light border border-brand-green/20 text-brand-green-hover hover:shadow-md'}`}
+        >
+          {testing
+            ? <><CircleNotch size={16} className="animate-spin" />连接中（首次需启动网关，约 1 分钟）…</>
+            : <><TestTube size={16} />测试连接</>}
+        </motion.button>
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.97 }}
+          onClick={handleRescan}
+          disabled={loading}
+          className="py-2.5 px-4 rounded-full text-[13px] bg-bg-raised border border-border-main text-text-muted hover:text-text-main transition-colors cursor-pointer"
+        >
+          重新扫描
+        </motion.button>
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.97 }}
+          onClick={handleRestart}
+          disabled={restarting || !gateway?.gateway_running}
+          className={`py-2.5 px-4 rounded-full text-[13px] bg-bg-raised border border-border-main transition-colors cursor-pointer
+            ${gateway?.gateway_running ? 'text-text-muted hover:text-text-main' : 'text-text-muted/40 cursor-not-allowed'}`}
+        >
+          重启服务
+        </motion.button>
+      </div>
+
+      {/* Test result */}
+      {testResult && (
+        <div style={{ marginBottom: 16 }}>
+          {testResult.ok ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-brand-green-light border-brand-green/20 text-brand-green-hover">
+              <Lightning size={14} weight="fill" />
+              连接成功（{(testResult.elapsed_ms / 1000).toFixed(1)}s，模型 {testResult.model}）
+            </div>
+          ) : (
+            <p className="text-xs text-status-error flex items-start gap-1">
+              <Warning size={12} className="mt-0.5 shrink-0" />
+              {testResult.error || '连接失败，请确认 WorkBuddy 已登录'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Gateway runtime info */}
+      {gateway?.gateway_running && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-bg-raised border border-border-main text-xs text-text-muted space-y-1">
+          <p>网关运行中 · PID {gateway.pid} · 端点 {gateway.endpoint}</p>
+          <p>当前模型 {gateway.model || 'auto'} · 已完成 {gateway.prompts} 次请求 · 空闲 {Math.round(gateway.idle_seconds)}s 后自动回收</p>
+        </div>
+      )}
+
+      <p className="text-xs text-text-muted mt-2 flex items-start gap-1.5">
+        <Info size={14} className="mt-0.5 shrink-0" />
+        WorkBuddy 应用服务直接复用本机 WorkBuddy 登录账号的模型额度，无需填写 API Key 和站点 URL。保存后需重启机器人生效。
+      </p>
+    </div>
+  )
+}
+
 function AiSection({ form, update, onOpenSandbox }) {
   const [detecting, setDetecting] = useState(false)
   const [detectResult, setDetectResult] = useState(null)  // { provider_type, available_models, error }
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [fullUrlMode, setFullUrlMode] = useState(false)  // toggle: full URL vs root address
+
+  const isWorkbuddy = form.ai_provider_type === 'workbuddy'
 
   // When toggling fullUrlMode, also update provider_type to custom
   function toggleFullUrlMode(val) {
@@ -47,6 +224,16 @@ function AiSection({ form, update, onOpenSandbox }) {
       if (form.ai_provider_type === 'custom') {
         update('ai_provider_type', 'openai')
       }
+    }
+    setDetectResult(null)
+  }
+
+  function setAccessMode(mode) {
+    if (mode === 'workbuddy') {
+      update('ai_provider_type', 'workbuddy')
+    } else {
+      // Leave the previous API settings in .env untouched so switching back restores them
+      update('ai_provider_type', form.ai_provider_type === 'workbuddy' ? 'auto' : form.ai_provider_type)
     }
     setDetectResult(null)
   }
@@ -100,6 +287,46 @@ function AiSection({ form, update, onOpenSandbox }) {
 
   return (
     <div>
+      {/* Access mode switch: API key vs WorkBuddy App Service */}
+      <div className="flex gap-2 mb-5">
+        <button
+          type="button"
+          onClick={() => setAccessMode('api')}
+          className={`flex-1 py-2 rounded-xl text-[13px] font-semibold border transition-colors cursor-pointer ${
+            !isWorkbuddy
+              ? 'bg-brand-green-light border-brand-green/20 text-brand-green-hover'
+              : 'bg-bg-raised border-border-main text-text-muted hover:text-text-main'
+          }`}
+        >API Key 接入</button>
+        <button
+          type="button"
+          onClick={() => setAccessMode('workbuddy')}
+          className={`flex-1 py-2 rounded-xl text-[13px] font-semibold border transition-colors cursor-pointer ${
+            isWorkbuddy
+              ? 'bg-brand-green-light border-brand-green/20 text-brand-green-hover'
+              : 'bg-bg-raised border-border-main text-text-muted hover:text-text-main'
+          }`}
+        >WorkBuddy 应用服务</button>
+      </div>
+
+      {isWorkbuddy ? (
+        <>
+          <WorkBuddySection form={form} update={update} />
+          <div className="flex items-center gap-3 mt-4">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              onClick={onOpenSandbox}
+              className="flex-1 py-2.5 rounded-full text-[14px] font-semibold tracking-wide shadow-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer bg-bg-raised border border-border-main text-brand-green-hover hover:border-brand-green/30 hover:bg-brand-green-light/30"
+            >
+              <ChatCircle size={16} />
+              测试对话
+            </motion.button>
+          </div>
+        </>
+      ) : (
+      <>
       <Field label="AI 站点 URL" hint={fullUrlMode
         ? '请填写完整请求 URL，将直接使用此 URL，不拼接路径'
         : '输入 API 根地址，不要以斜杠结尾，例如 https://api.deepseek.com'}>
@@ -253,6 +480,8 @@ function AiSection({ form, update, onOpenSandbox }) {
         <Info size={14} />
         填好 URL 和 Key 后点击「检测模型」自动识别 API 类型，也可直接选模型后「测试对话」验证连通性。
       </p>
+      </>
+      )}
     </div>
   )
 }
@@ -2197,15 +2426,19 @@ function PushPlatformOverview({ platforms, onSelect }) {
 function PushPlatformView() {
   const [tab, setTab] = useState('overview')
   const [platforms, setPlatforms] = useState([])
-  const reloadPlatforms = () => fetch(`${API_BASE}/api/platforms`).then(res => res.json()).then(data => setPlatforms(data.platforms || [])).catch(() => {})
+  const reloadPlatforms = useCallback(() => fetch(`${API_BASE}/api/platforms`).then(res => res.json()).then(data => setPlatforms(data.platforms || [])).catch(() => {}), [])
 
   useEffect(() => {
     let cancelled = false
-    fetch(`${API_BASE}/api/platforms`)
+    // 轮询刷新：微信在本页其他 tab 扫码绑定成功后，概览卡片状态要跟着变，
+    // 否则会一直停留在绑定前拉到的"未配置"。
+    const load = () => fetch(`${API_BASE}/api/platforms`)
       .then(res => res.json())
       .then(data => { if (!cancelled) setPlatforms(data.platforms || []) })
-      .catch(() => { if (!cancelled) setPlatforms([]) })
-    return () => { cancelled = true }
+      .catch(() => {})
+    load()
+    const timer = window.setInterval(load, 5000)
+    return () => { cancelled = true; window.clearInterval(timer) }
   }, [])
 
   const tabs = [

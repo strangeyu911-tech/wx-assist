@@ -91,16 +91,34 @@ class QQOnboarding:
             logger.error("[qq-onboard] poll request failed: %s", exc)
             raise
         if data.get("retcode") != 0:
-            logger.error("[qq-onboard] poll retcode=%s msg=%s", data.get("retcode"), data.get("msg"))
-            raise RuntimeError(data.get("msg", "QQ bind poll failed"))
+            retcode = data.get("retcode")
+            msg = data.get("msg", "QQ bind poll failed")
+            logger.error("[qq-onboard] poll retcode=%s msg=%s", retcode, msg)
+            # 30012 轮询频率过高是瞬态限流：按 pending 返回，UI 继续轮询即可
+            if retcode == 30012:
+                return {"status": task.status, "rate_limited": True}
+            raise RuntimeError(msg)
         payload = data.get("data") or {}
         status = int(payload.get("status", 0))
         logger.info("[qq-onboard] poll task_id=%s status=%s retcode=%s", task_id, status, data.get("retcode"))
         if status == 2:
             encrypted = str(payload.get("bot_encrypt_secret", ""))
+            try:
+                client_secret = self._decrypt(encrypted, task.key)
+            except ImportError as exc:
+                # 依赖缺失（如 cryptography 未安装）——明确失败，让 UI 停止轮询并提示
+                task.status = "failed"
+                task.error = f"服务端缺少解密依赖（{exc.name or 'cryptography'}），请在项目环境执行 pip install cryptography 后重试"
+                logger.exception("[qq-onboard] decrypt dependency missing")
+                return {"status": task.status, "error": task.error}
+            except Exception as exc:
+                task.status = "failed"
+                task.error = f"扫码成功但密钥解密失败：{exc}"
+                logger.exception("[qq-onboard] decrypt failed")
+                return {"status": task.status, "error": task.error}
             result = {
                 "app_id": str(payload.get("bot_appid", "")),
-                "client_secret": self._decrypt(encrypted, task.key),
+                "client_secret": client_secret,
                 "user_openid": str(payload.get("user_openid", "")),
             }
             task.status = "completed"
