@@ -216,10 +216,25 @@
     </div>
 
     <h2 id="ai">配置 AI 后端</h2>
-    <p>摘要、提醒、对话都依赖 AI 模型。程序支持接入 DeepSeek 等兼容 OpenAI 接口的大模型服务，按以下步骤配置：</p>
+    <p>摘要、提醒、对话都依赖 AI 模型。进入「系统配置 → AI 设置」，页顶有两个接入方式可选：<strong>「WorkBuddy 应用服务」</strong>和<strong>「API Key 接入」</strong>。两种方式二选一即可。</p>
+
+    <h3>方式一：WorkBuddy 应用服务（推荐，最简单）</h3>
+    <p>如果你电脑上装有 <strong>WorkBuddy</strong> 桌面应用并已登录，这是最省事的方式：<strong>不需要注册任何大模型服务、不需要充值、不需要填写 API Key</strong>——程序直接复用你本机 WorkBuddy 登录账号的模型额度。</p>
+    <ol class="steps">
+      <li><span class="st">确保 WorkBuddy 已安装并登录</span>在本机安装 WorkBuddy 桌面应用，并登录你的账号。程序会自动找到它，无需手动配置路径。</li>
+      <li><span class="st">切换接入方式</span>进入「系统配置 → AI 设置」，点页顶的<strong>「WorkBuddy 应用服务」</strong>按钮。页面会显示检测状态：找到 WorkBuddy 即说明就绪。</li>
+      <li><span class="st">点「测试连接」</span>模型选择保持默认（自动）即可。测试通过后，「运行状态」页的 AI 后端会显示「可达」。</li>
+      <li><span class="st">保存并重启程序</span>保存设置后<strong>重启摘星</strong>（关掉窗口重新双击 .exe）即可生效。</li>
+    </ol>
+    <div class="box tip">
+      <span class="ttl">什么时候选这种方式？</span>
+      <p>已经（或愿意）安装 WorkBuddy、不想折腾大模型注册和充值的用户——一步切换、点一次测试就能用。如果不想额外安装应用，或者想用特定的大模型服务（如 DeepSeek），选下面的方式二。</p>
+    </div>
+
+    <h3>方式二：API Key 接入</h3>
     <ol class="steps">
       <li><span class="st">获取一个 API Key</span>到大模型服务商官网注册并创建 API Key（例如 DeepSeek，充值几块钱够用很久）。</li>
-      <li><span class="st">填入程序</span>进入「系统配置 → AI 设置」，粘贴 API Key，选择模型，保存。</li>
+      <li><span class="st">填入程序</span>在「系统配置 → AI 设置」里点「API Key 接入」，粘贴 API Key，选择模型，保存。</li>
       <li><span class="st">点「测试连接」</span>测试通过后，「运行状态」页的 AI 后端会显示「可达」。第一次使用前务必点一次。</li>
     </ol>
     <div class="box warn">
@@ -244,7 +259,7 @@
       <tr><td>窗口能开，但显示「未检测到微信」</td><td>先启动并登录微信电脑版，再重启摘星。程序只支持 Windows 版微信。</td></tr>
       <tr><td>浏览器打开 <code>127.0.0.1:17327</code> 打不开</td><td>程序没在运行，先双击 .exe；或端口被其他程序占用，重启电脑后再试。</td></tr>
       <tr><td>收不到推送</td><td>到「系统配置 → 推送平台」确认对应平台显示「已连接」；再到「运行状态」确认 AI 后端「可达」；失败的推送可在任务中心一键重推。</td></tr>
-      <tr><td>AI 功能报错 / 无响应</td><td>检查 AI 设置里的 API Key 是否有效、账户是否有余额，点「测试连接」看具体报错。</td></tr>
+      <tr><td>AI 功能报错 / 无响应</td><td>先确认「运行状态」页 AI 后端是否「可达」，再点 AI 设置里的「测试连接」看具体报错。WorkBuddy 方式：确认本机 WorkBuddy 已安装、登录，且保存设置后重启过摘星；API Key 方式：检查 Key 是否有效、账户是否有余额。</td></tr>
       <tr><td>想换电脑</td><td>把整个文件夹（含 <code>data\</code>）拷到新电脑，重新放行杀软即可，配置和数据原样保留。</td></tr>
       <tr><td>更新到新版本</td><td>到 Releases 下载新版 .exe 覆盖旧文件，数据不丢。注意认准带附件的版本（见上文）。</td></tr>
     </table>
