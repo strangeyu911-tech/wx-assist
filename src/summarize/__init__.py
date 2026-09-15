@@ -36,6 +36,20 @@ def create_summarizer(config) -> AbstractSummarizer:
     Raises:
         ValueError: If the configured backend is unknown.
     """
+    # WorkBuddy App Service: reuses the logged-in WorkBuddy desktop account's
+    # model quota via a local ACP gateway. No API key / base URL required, so
+    # this branch must be checked before the base_url+api_key gate below.
+    if config.ai_provider_type == "workbuddy":
+        from .workbuddy_backend import WorkBuddySummarizer
+        logger.info(
+            "Creating WorkBuddySummarizer (model=%s)",
+            config.ai_provider_model or "auto",
+        )
+        return WorkBuddySummarizer(
+            model=config.ai_provider_model or "auto",
+            chunk_size=config.chunk_size,
+        )
+
     if config.ai_provider_base_url and config.ai_provider_api_key:
         provider_type = config.ai_provider_type
         if provider_type == "auto":

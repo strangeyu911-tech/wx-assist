@@ -78,6 +78,36 @@ class FastEmbedder(Embedder):
         # 默认让 fastembed 用自己的缓存
         return str(Path.home() / ".cache" / "fastembed")
 
+    def _find_local_model_dir(self, cache_dir: str) -> Optional[str]:
+        """在 cache_dir 下查找已下载的模型目录，命中则跳过联网校验。
+
+        fastembed 支持 specific_model_path：直接指向本地模型目录时，不会发起
+        任何网络请求（model_info / list_repo_tree / snapshot_download 全部跳过）。
+        没有本地副本时返回 None，交回 fastembed 原有下载逻辑。
+
+        兼容三种落地形态：
+          1. fast-<name>/                              GCS tar.gz（deprecated 结构，本项目采用）
+          2. <name>/                                   GCS tar.gz（新结构）
+          3. models--<org>--<name>/snapshots/<rev>/    HuggingFace 缓存
+        """
+        leaf = self.model_name.split("/")[-1]
+        root = Path(cache_dir)
+        if not root.is_dir():
+            return None
+
+        for candidate in (root / f"fast-{leaf}", root / leaf):
+            if candidate.is_dir() and any(candidate.iterdir()):
+                return str(candidate)
+
+        # HuggingFace 缓存形态：真正的模型文件在 snapshots/<rev>/ 下
+        hf_root = root / f"models--{self.model_name.replace('/', '--')}" / "snapshots"
+        if hf_root.is_dir():
+            for rev in sorted(hf_root.iterdir(), reverse=True):
+                if rev.is_dir() and any(rev.glob("*.onnx")):
+                    return str(rev)
+
+        return None
+
     def warmup(self):
         if self._model is not None:
             return
@@ -88,9 +118,18 @@ class FastEmbedder(Embedder):
             cache_dir = self._find_cache_dir()
             logger.info("[RAG] 加载嵌入模型: cache_dir=%s", cache_dir)
 
+            # 本地已有模型时直接指定路径，跳过 fastembed 的联网校验。
+            # 否则每次冷启动都会请求 HF Hub 校验/补全文件，实测能拖到 13 分钟。
+            model_kwargs = {}
+            local_model_dir = self._find_local_model_dir(cache_dir)
+            if local_model_dir:
+                model_kwargs["specific_model_path"] = local_model_dir
+                logger.info("[RAG] 命中本地模型目录，跳过联网校验: %s", local_model_dir)
+
             self._model = TextEmbedding(
                 model_name=self.model_name,
                 cache_dir=cache_dir,
+                **model_kwargs,
             )
 
             # 预热：编码一次确保 ONNX Runtime 就绪

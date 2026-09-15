@@ -1495,6 +1495,9 @@ class _UIHandler(SimpleHTTPRequestHandler):
                          "/api/wechat-data-dir/detect",
                          "/api/agent/test",
                          "/api/skills/sample",
+                         "/api/workbuddy/test",
+                         "/api/workbuddy/restart",
+                         "/api/workbuddy/rescan",
                          "/api/platforms",
                          "/webhook/feishu") or (
                              self.path.startswith("/api/platforms/") and "/onboard/" in self.path
@@ -2148,6 +2151,72 @@ class _UIHandler(SimpleHTTPRequestHandler):
                 self.send_json({"ok": True})
             except Exception as e:
                 logger.exception("Failed to save nickname")
+                self.send_json({"ok": False, "error": str(e)})
+            return
+
+        # ── API: WorkBuddy App Service — light status (never starts the gateway) ──
+        if self.path == "/api/workbuddy/status":
+            try:
+                from src.summarize import workbuddy_backend as wb
+                info = wb.discover()
+                status = wb.get_gateway().status() if info.get("ok") else None
+                self.send_json({
+                    "ok": True,
+                    "supported": info.get("ok", False),
+                    "error": info.get("error", ""),
+                    "supported_models": wb.SUPPORTED_MODELS,
+                    "tool_emulation": wb.TOOL_EMULATION,
+                    "gateway": status,
+                })
+            except Exception as e:
+                logger.exception("WorkBuddy status failed")
+                self.send_json({"ok": False, "error": str(e)})
+            return
+
+        # ── API: WorkBuddy App Service — full connection test (starts gateway) ──
+        if self.path == "/api/workbuddy/test":
+            content_len = min(int(self.headers.get("Content-Length", 0)), self.MAX_BODY_SIZE)
+            body = self.rfile.read(content_len) if content_len else b"{}"
+            try:
+                data = json.loads(body) if body else {}
+                # Model priority: request body > .env AI_PROVIDER_MODEL > auto
+                model = (data.get("model") or "").strip()
+                if not model:
+                    env_path = _find_or_create_env()
+                    if env_path.exists():
+                        for line in env_path.read_text(encoding="utf-8").splitlines():
+                            if line.strip().startswith("AI_PROVIDER_MODEL="):
+                                model = line.split("=", 1)[1].strip()
+                                break
+                from src.summarize import workbuddy_backend as wb
+                result = wb.get_gateway().test_connection(model or "auto")
+                update_status(ai_verified=result.get("ok", False))
+                self.send_json(result)
+            except Exception as e:
+                logger.exception("WorkBuddy test failed")
+                self.send_json({"ok": False, "error": str(e), "reply": ""})
+            return
+
+        # ── API: WorkBuddy App Service — stop gateway (next request restarts it) ──
+        if self.path == "/api/workbuddy/restart":
+            try:
+                from src.summarize import workbuddy_backend as wb
+                wb.get_gateway().restart()
+                self.send_json({"ok": True, "gateway": wb.get_gateway().status()})
+            except Exception as e:
+                logger.exception("WorkBuddy restart failed")
+                self.send_json({"ok": False, "error": str(e)})
+            return
+
+        # ── API: WorkBuddy App Service — rescan CLI discovery cache ──
+        if self.path == "/api/workbuddy/rescan":
+            try:
+                from src.summarize import workbuddy_backend as wb
+                info = wb.rescan()
+                self.send_json({"ok": True, "supported": info.get("ok", False),
+                                "error": info.get("error", "")})
+            except Exception as e:
+                logger.exception("WorkBuddy rescan failed")
                 self.send_json({"ok": False, "error": str(e)})
             return
 
